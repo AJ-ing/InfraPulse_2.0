@@ -1,30 +1,4 @@
----
-name: InfraPulse 2.0 README Plan
-overview: Create a comprehensive README for InfraPulse_2.0 that defines a data center power usage and expenditure platform—calculating PUE, energy costs, and savings potential—built on the same Streamlit + batch-pipeline architecture as InfraPulse v1, with phased data ingestion and multi-facility support.
-todos:
-  - id: write-readme
-    content: Write full README.md to InfraPulse_2.0 repo with all sections from this plan (problem, features, architecture, metrics, data model, roadmap, getting started)
-    status: pending
-  - id: scaffold-repo
-    content: "Scaffold repo structure: pipeline/, pages/, data/sample/, tests/, utils/, streamlit_app.py, data_loader.py, requirements.txt"
-    status: pending
-  - id: scoring-logic
-    content: Implement pipeline/scoring_logic.py with PUE, DCiE, cost, and savings formulas + pytest unit tests
-    status: pending
-  - id: sample-data
-    content: "Generate synthetic sample dataset: 5 facilities, 12 months meter readings, tariffs, benchmarks"
-    status: pending
-  - id: pipeline
-    content: Build batch pipeline (ingest → compute_pue → compute_costs → savings_scenarios → run_pipeline.py)
-    status: pending
-  - id: streamlit-pages
-    content: "Build 6 Streamlit pages: home, portfolio, facility drill-down, savings analyzer, sandbox, methodology"
-    status: pending
-  - id: ci-deploy
-    content: Add GitHub Actions CI + deploy to Streamlit Community Cloud; capture screenshots for README
-    status: pending
-isProject: false
----
+
 
 # InfraPulse 2.0 — Data Center Power & Expenditure Platform Plan
 
