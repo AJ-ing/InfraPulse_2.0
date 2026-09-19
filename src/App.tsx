@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { Link, NavLink, Route, Routes } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import {
   ArrowRight,
   ArrowUpRight,
@@ -72,7 +72,7 @@ function AppHeader({ compact = false }: { compact?: boolean }) {
           <NavLink end to="/">
             Overview
           </NavLink>
-          <a href="/#methodology">Methodology</a>
+          <Link to="/?section=methodology">Methodology</Link>
           <a href={sourceRepository} target="_blank" rel="noreferrer">
             Source <ArrowUpRight weight="bold" aria-hidden="true" />
           </a>
@@ -144,7 +144,13 @@ function LandingMetrics({ data }: { data: DashboardData | null }) {
 
 function LandingPage() {
   const state = useDashboardData()
+  const location = useLocation()
   const data = state.status === 'ready' ? state.data : null
+
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get('section') !== 'methodology') return
+    document.getElementById('methodology')?.scrollIntoView()
+  }, [location.search])
 
   return (
     <div className="site-shell">
