@@ -1,0 +1,4 @@
+meter_pattern,meter_role,description
+ULC,it_load,Rack or server-side IT load meter
+CRAC,cooling,Computer room air conditioning meter
+DB,facility_total,Aggregate facility meter for a future true-PUE calculation

@@ -1,0 +1,5 @@
+device,role,averageKw,peakKw,estimatedEnergyKwh,observedHours
+ADB1_CRAC3,cooling,11.84,41.28,13657.12,1153
+ADB1_CRAC4,cooling,11.99,29.43,13822.64,1153
+UDB1_ULC_5,it_load,7.14,15.05,8233.99,1153
+UDB2_ULC_6,it_load,7.11,9.92,8194.61,1153

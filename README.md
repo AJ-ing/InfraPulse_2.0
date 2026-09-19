@@ -4,7 +4,19 @@ Data center energy intelligence platform for power visibility, cooling efficienc
 
 InfraPulse 2.0 is being rebuilt as a React product instead of a Streamlit prototype. The project will have a polished landing page, a production-style analytics dashboard, and a transparent data pipeline built around real data center meter readings.
 
-Repository status: planning and pre-MVP.
+Repository status: React MVP implemented with a public landing page, interactive dashboard, reproducible data pipeline, and GitHub Pages deployment workflow.
+
+## Current Implementation
+
+The first release is built and deployable. It includes:
+
+- React, TypeScript, Vite, Recharts, and Phosphor icons.
+- A responsive landing page using original data-center imagery.
+- A dashboard for IT load, cooling load, PUE proxy, daily energy, device comparison, data quality, CSV export, and a cooling-reduction scenario.
+- A Python standard-library pipeline that converts the public compressed CSV into `public/data/dashboard.json` and `public/data/device_summary.csv`.
+- Automated GitHub Pages deployment from `main` through `.github/workflows/deploy.yml`.
+
+The raw source sample is intentionally ignored by Git. Run the pipeline locally to download it from the public source and regenerate the frontend data.
 
 ## Dataset Decision
 
@@ -447,10 +459,10 @@ Recommended frontend stack:
 | --- | --- | --- |
 | Framework | React + TypeScript | Strong portfolio and production fit |
 | Build tool | Vite | Fast local development |
-| Styling | Tailwind CSS | Fast responsive UI work |
-| Charts | Recharts or Plotly.js | Interactive time-series visualizations |
-| Tables | TanStack Table | Device comparison and sorting/filtering |
-| Icons | lucide-react | Clean dashboard icon set |
+| Styling | Native CSS with design tokens | Responsive theme with no framework lock-in |
+| Charts | Recharts | Interactive time-series visualizations |
+| Tables | Semantic HTML table | Clear, accessible device comparison |
+| Icons | Phosphor Icons | Consistent interface iconography |
 | Data loading | Static JSON/CSV fetch from `public/data` | Simple MVP deployment |
 
 ### Data Pipeline Architecture
@@ -460,8 +472,8 @@ Recommended pipeline stack:
 | Layer | Choice | Reason |
 | --- | --- | --- |
 | Language | Python 3.11+ | Reliable data processing |
-| Dataframes | pandas | CSV/gzip parsing and aggregation |
-| Tests | pytest | Formula and validation tests |
+| Dataframes | Python standard library | No runtime dependency beyond Python |
+| Tests | unittest | Classification and parsing validation |
 | Output format | JSON + CSV | Easy frontend consumption |
 
 ### Proposed Repository Structure
@@ -477,45 +489,29 @@ InfraPulse_2.0/
 ├── src/
 │   ├── main.tsx
 │   ├── App.tsx
-│   ├── routes/
-│   │   ├── LandingPage.tsx
-│   │   └── DashboardPage.tsx
-│   ├── components/
-│   │   ├── layout/
-│   │   ├── charts/
-│   │   ├── dashboard/
-│   │   └── ui/
-│   ├── data/
-│   │   ├── api.ts
-│   │   └── types.ts
-│   └── styles/
-│       └── globals.css
+│   ├── App.css
+│   ├── index.css
+│   ├── types.ts
+│   └── hooks/
+│       └── useDashboardData.ts
 ├── public/
+│   ├── assets/
+│   │   ├── data-center-hero.png
+│   │   └── metering-infrastructure.png
 │   └── data/
-│       ├── kpi_summary.json
-│       ├── time_series.json
-│       ├── device_summary.csv
-│       ├── savings_scenarios.json
-│       └── data_quality.json
+│       ├── dashboard.json
+│       └── device_summary.csv
 ├── data/
 │   ├── raw/
-│   │   └── power_test.csv.gz
+│   │   └── power_test.csv.gz (downloaded locally and ignored by Git)
 │   ├── reference/
-│   │   ├── meter_mapping.csv
-│   │   ├── tariffs.csv
-│   │   └── scenarios.csv
-│   └── processed/
+│   │   └── meter_mapping.csv
 ├── pipeline/
-│   ├── ingest.py
-│   ├── normalize.py
-│   ├── metrics.py
-│   ├── scenarios.py
-│   ├── export_frontend.py
-│   └── run_pipeline.py
+│   └── build_sample.py
+├── .github/workflows/
+│   └── deploy.yml
 └── tests/
-    ├── test_metrics.py
-    ├── test_normalize.py
-    └── test_scenarios.py
+    └── test_build_sample.py
 ```
 
 ## Calculation Methodology
@@ -571,26 +567,26 @@ savings_kw = max(current_cooling_kw - target_cooling_kw, 0)
 
 ## Roadmap
 
-### Phase 1: Planning and Data Contract
+### Phase 1: Planning and Data Contract - Complete
 
 - Finalize README, PRD, SRD, architecture, input contracts, and output contracts.
 - Select `cchantra/energydata` public sample as MVP dataset.
 - Document PUE proxy limitation clearly.
 
-### Phase 2: React Scaffold
+### Phase 2: React Scaffold - Complete
 
 - Create Vite React TypeScript app.
 - Add landing page and dashboard route.
 - Add design system basics, chart components, and responsive layout.
 
-### Phase 3: Data Pipeline
+### Phase 3: Data Pipeline - Complete
 
 - Download or include `power_test.csv.gz`.
 - Normalize meters into role-based readings.
 - Generate processed JSON/CSV files.
 - Add tests for formulas and validation.
 
-### Phase 4: Dashboard MVP
+### Phase 4: Dashboard MVP - Complete
 
 - Build KPI overview.
 - Build IT vs cooling charts.
@@ -598,7 +594,7 @@ savings_kw = max(current_cooling_kw - target_cooling_kw, 0)
 - Build device comparison table.
 - Build data quality panel.
 
-### Phase 5: Savings and Methodology
+### Phase 5: Savings and Methodology - Complete
 
 - Add savings simulator.
 - Add methodology page.
@@ -622,7 +618,7 @@ savings_kw = max(current_cooling_kw - target_cooling_kw, 0)
 
 ## Acceptance Criteria
 
-The MVP is complete when:
+The delivered MVP satisfies these criteria:
 
 - The React landing page is polished and explains the project clearly.
 - The dashboard loads from processed JSON/CSV data.
@@ -636,21 +632,28 @@ The MVP is complete when:
 
 ## Local Development Plan
 
-Expected commands after implementation:
+Run the application locally:
 
 ```bash
 # install frontend dependencies
 npm install
 
-# generate processed data
-python3 pipeline/run_pipeline.py
+# generate or regenerate processed data
+python3 pipeline/build_sample.py
 
 # run tests
-python3 -m pytest
+python3 -m unittest discover -s tests
+
+# build the static production site
+npm run build
 
 # start React app
 npm run dev
 ```
+
+## GitHub Pages Deployment
+
+The workflow at `.github/workflows/deploy.yml` builds and deploys the static site whenever `main` changes. In repository Settings, set Pages to use GitHub Actions if GitHub has not enabled that source automatically. The published URL is expected at `https://aj-ing.github.io/InfraPulse_2.0/`.
 
 ## Relationship to InfraPulse v1
 
