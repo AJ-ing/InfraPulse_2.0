@@ -1,312 +1,675 @@
+# InfraPulse 2.0
 
+Data center energy intelligence platform for power visibility, cooling efficiency, PUE-style analysis, and savings planning.
 
-# InfraPulse 2.0 — Data Center Power & Expenditure Platform Plan
+InfraPulse 2.0 is being rebuilt as a React product instead of a Streamlit prototype. The project will have a polished landing page, a production-style analytics dashboard, and a transparent data pipeline built around real data center meter readings.
 
-## Goal
+Repository status: planning and pre-MVP.
 
-Replace the placeholder README in [AJ-ing/InfraPulse_2.0](https://github.com/AJ-ing/InfraPulse_2.0) with a full project plan and architecture document. The repo is currently empty (LICENSE + 16-byte README). This plan defines what that README will contain and how the platform will be built.
+## Dataset Decision
 
-**Relationship to InfraPulse v1:** [InfraPulse](https://github.com/AJ-ing/InfraPulse) is a Streamlit-based infrastructure asset decision-support system (bridge risk scoring). InfraPulse 2.0 reuses the same proven pattern—batch pipeline writes processed CSVs, read-only Streamlit dashboard consumes them—but pivots the domain from physical asset risk to **data center energy efficiency and cost optimization**.
+The MVP will use the public sample data from the `cchantra/energydata` repository, which is connected to the ScienceDB data center energy-meter dataset.
 
----
+Primary dataset references:
 
-## Problem Statement (README intro)
+- ScienceDB dataset: [Energy Meter Data of Data Center in a University](https://doi.org/10.57760/sciencedb.10792)
+- Companion/sample repository: [cchantra/energydata](https://github.com/cchantra/energydata)
+- Full dataset domain: Kasetsart University data center energy meters
+- Public sample file for MVP: `power_test.csv.gz`
 
-Data centers consume 1–3% of global electricity. Facility operators must answer:
+Why this dataset fits InfraPulse 2.0:
 
-- How efficient is each site? (**PUE**)
-- How much are we spending on power, and where is waste? (**expenditure breakdown**)
-- How much could we save by improving cooling, UPS efficiency, or IT load? (**savings scenarios**)
+- It is real data center energy meter data, not generic building data.
+- It includes server/rack load meters: `ULC` devices.
+- It includes cooling load meters: `CRAC` devices.
+- The ScienceDB description also references aggregate `DB` meters, which can support true facility-level PUE if the full raw data is requested later.
+- The public sample is large enough for meaningful time-series dashboard work.
 
-InfraPulse 2.0 is a transparent, explainable decision-support tool—no black-box ML—mirroring the methodology-first approach of v1.
+Known dataset caveat:
 
----
+The public sample includes ULC and CRAC meters, but does not expose the full facility aggregate DB meters in the same convenient sample. For MVP, InfraPulse 2.0 will compute a PUE-style proxy:
 
-## Core Metrics & Formulas
+```text
+PUE proxy = (IT load + cooling load) / IT load
+```
 
-| Metric | Formula | Notes |
-|--------|---------|-------|
-| **PUE** | `Total Facility Energy / IT Equipment Energy` | ISO/IEC 30134-2; lower is better; ideal = 1.0 |
-| **DCiE** | `(1 / PUE) × 100` | Percentage of energy going to IT |
-| **Overhead Energy** | `Total Energy − IT Energy` | Cooling, UPS losses, lighting, etc. |
-| **Energy Cost** | `kWh × tariff_rate` | Per facility, per period |
-| **Carbon (optional)** | `kWh × grid_emission_factor` | Phase 2 |
-| **Savings Potential** | `(current_PUE − target_PUE) × IT_load_kWh × tariff` | Annualized |
+When full aggregate DB meter data is available, the platform can compute true PUE:
 
-**PUE measurement categories** (ENERGY STAR / Green Grid):
+```text
+True PUE = total facility energy / IT equipment energy
+```
 
-- **PUE1** — instantaneous power (kW)
-- **PUE2** — energy over 12 months (kWh) — primary reporting metric
-- **PUE3** — energy over 12 months, all energy sources weighted
+## Product Vision
 
-Phase 1 implements PUE1 and PUE2 from CSV meter readings.
+InfraPulse 2.0 helps facility operators and sustainability teams understand where power is going inside a data center, how efficiently cooling is supporting IT load, and what savings may be possible through operational changes.
 
-**Industry benchmarks** (for savings context):
+The product should feel like a real SaaS analytics platform: clear landing page, credible methodology, interactive dashboard, and explainable calculations.
 
-- Uptime Institute average PUE: ~1.59
-- Hyperscale leaders: 1.1–1.2
-- Legacy enterprise: 1.8–2.0+
+## PRD: Product Requirements Document
 
----
+### Problem
+
+Data center teams need fast answers to operational and financial questions:
+
+- How much power are IT racks consuming?
+- How much power is cooling consuming?
+- Is cooling load rising faster than IT load?
+- Are there abnormal spikes or inefficient operating periods?
+- How much could be saved if cooling efficiency improves?
+- Can stakeholders trust the calculations?
+
+Most portfolio dashboards either hide methodology or require enterprise DCIM integrations. InfraPulse 2.0 should start with transparent CSV-based analysis and later grow into live integrations.
+
+### Target Users
+
+| User | Goal | Product Value |
+| --- | --- | --- |
+| Data center facility manager | Monitor power and cooling behavior | Detect high cooling load, spikes, and inefficient periods |
+| Energy analyst | Explain consumption trends | Time-series analysis, normalized meter data, exportable metrics |
+| Sustainability lead | Quantify efficiency and carbon impact | Energy intensity, estimated emissions, improvement scenarios |
+| Finance or operations manager | Estimate savings | Tariff-based cost model and scenario planning |
+| Engineering student or portfolio reviewer | Understand the project | Clear methodology, reproducible dataset, modern React implementation |
+| Developer/contributor | Extend the system | Typed contracts, documented data pipeline, testable formulas |
+
+### Product Goals
+
+1. Present InfraPulse 2.0 as a credible data center energy intelligence product.
+2. Build a React landing page that explains the problem, dataset, methodology, and dashboard value.
+3. Build a dashboard that reads processed dataset outputs and visualizes IT load, cooling load, PUE proxy, cost, and savings scenarios.
+4. Keep formulas transparent and testable.
+5. Keep the MVP fully reproducible from public sample data.
+6. Design the architecture so true PUE can be added when aggregate facility meter data is available.
+
+### Non-Goals for MVP
+
+- No real-time DCIM, BMS, SNMP, or Modbus integrations.
+- No authentication or multi-tenant user accounts.
+- No black-box ML model as a core requirement.
+- No claim of true PUE unless total facility energy is available.
+- No manual spreadsheet workflow inside the frontend.
+
+### MVP Features
+
+| Feature | Description | Priority |
+| --- | --- | --- |
+| Landing page | Product narrative, dataset credibility, feature preview, methodology summary | P0 |
+| Dashboard overview | KPI tiles for IT load, cooling load, PUE proxy, cost estimate, peak demand | P0 |
+| Time-series charts | IT vs cooling load over time, daily/weekly aggregation | P0 |
+| Device comparison | Compare ULC and CRAC meters by average, peak, total energy, variance | P0 |
+| Cooling efficiency view | Cooling-to-IT ratio and PUE proxy trend | P0 |
+| Savings simulator | Estimate cost reduction from cooling load reduction or target PUE proxy | P1 |
+| Anomaly flags | Rule-based spikes, missing data, zero readings, high cooling ratio | P1 |
+| Methodology page | Formulas, dataset limits, PUE proxy explanation | P1 |
+| CSV/JSON export | Download processed summary outputs | P2 |
+
+### Success Metrics
+
+- A user can understand the project from the landing page in under one minute.
+- A user can identify highest cooling load periods from the dashboard.
+- A user can see the difference between IT load, cooling load, and PUE proxy.
+- All key metrics trace back to documented formulas.
+- The app can be rebuilt from public data and local scripts.
+- The frontend does not require Python at runtime after processed files are generated.
+
+## SRD: System Requirements Document
+
+### Functional Requirements
+
+#### FR1: Data ingestion
+
+The system shall ingest the public `power_test.csv.gz` sample from `cchantra/energydata`.
+
+Expected raw fields include:
+
+| Raw column | Meaning | Required for MVP |
+| --- | --- | --- |
+| `Timestamp` | Meter reading timestamp | Yes |
+| `dev_name` | Device/meter name | Yes |
+| `Active_Threephase_Power` | Active three-phase power reading | Yes |
+| `Consumed_active_energy_kW` | Consumed active energy reading or meter-derived value | Optional |
+| Current, voltage, power factor columns | Electrical context | Optional |
+
+Observed MVP device categories:
+
+| Device pattern | Category | Business meaning |
+| --- | --- | --- |
+| `UDB*_ULC_*` | `it_load` | Rack/server/IT load |
+| `ADB*_CRAC*` | `cooling` | Cooling/air conditioning load |
+| `DB*` | `facility_total` | Aggregate facility load, future full dataset support |
+
+#### FR2: Normalization
+
+The pipeline shall convert raw readings into a consistent normalized meter format.
+
+Normalized file: `data/processed/meter_readings.csv`
+
+| Column | Type | Description |
+| --- | --- | --- |
+| `timestamp` | datetime | ISO timestamp |
+| `facility_id` | string | Logical facility identifier, default `ku_dc_1` for MVP |
+| `meter_id` | string | Raw device name |
+| `meter_role` | enum | `it_load`, `cooling`, `facility_total`, `unknown` |
+| `power_kw` | number | Active power in kW |
+| `energy_kwh_interval` | number | Estimated interval energy |
+| `source_file` | string | Input file name |
+
+#### FR3: Aggregation
+
+The pipeline shall aggregate readings into frontend-ready files.
+
+Processed outputs:
+
+| Output | Grain | Purpose |
+| --- | --- | --- |
+| `time_series.json` | timestamp or resampled interval | Dashboard charts |
+| `daily_summary.csv` | day | Daily KPI trend and anomaly scanning |
+| `device_summary.csv` | device | Device comparison table |
+| `kpi_summary.json` | portfolio/facility | Top-level KPI tiles |
+| `savings_scenarios.json` | scenario | What-if simulator defaults |
+| `data_quality.json` | dataset | Missing values, duplicates, coverage, anomalies |
+
+#### FR4: Metric calculation
+
+The system shall compute:
+
+| Metric | Formula |
+| --- | --- |
+| IT power | Sum of `power_kw` where `meter_role = it_load` |
+| Cooling power | Sum of `power_kw` where `meter_role = cooling` |
+| Total proxy power | `it_power_kw + cooling_power_kw` |
+| PUE proxy | `total_proxy_power / it_power_kw` |
+| Cooling ratio | `cooling_power_kw / it_power_kw` |
+| Interval energy | `power_kw x interval_hours` |
+| Cost estimate | `energy_kwh x tariff_per_kwh` |
+| Savings estimate | `baseline_cost - scenario_cost` |
+
+If `facility_total` meters are available later:
+
+| Metric | Formula |
+| --- | --- |
+| True PUE | `facility_total_energy_kwh / it_energy_kwh` |
+| Non-IT overhead | `facility_total_energy_kwh - it_energy_kwh` |
+
+#### FR5: Frontend landing page
+
+The React app shall expose a landing page with:
+
+- Hero section: product name, tagline, dataset-backed credibility, dashboard CTA.
+- Problem section: power visibility, cooling overhead, savings uncertainty.
+- Dataset section: ScienceDB and `cchantra/energydata` references.
+- Product preview: screenshots or designed dashboard panels once built.
+- Methodology section: PUE proxy now, true PUE later.
+- Roadmap section: MVP, full data, live integrations.
+
+#### FR6: Frontend dashboard
+
+The dashboard shall include:
+
+- Top KPI strip.
+- IT vs cooling time-series chart.
+- PUE proxy trend chart.
+- Daily energy and estimated cost chart.
+- Device comparison table.
+- Savings simulator panel.
+- Data quality panel.
+- Methodology drawer or page.
+
+### Non-Functional Requirements
+
+| Requirement | Target |
+| --- | --- |
+| Performance | Initial dashboard load under 3 seconds with processed sample data |
+| Reproducibility | Public data plus scripts can regenerate processed outputs |
+| Explainability | Every KPI has a visible formula or methodology reference |
+| Accessibility | Color is never the only status indicator |
+| Responsiveness | Desktop-first dashboard, usable on tablet, clean mobile fallback |
+| Maintainability | Data contracts are documented and tested |
+| Security | No secrets or API keys required for MVP |
+
+## Stakeholders
+
+### Primary stakeholders
+
+| Stakeholder | Needs | Dashboard Questions |
+| --- | --- | --- |
+| Facility operations team | Operational visibility | When did cooling load spike? Which equipment drives load? |
+| Energy management team | Efficiency insight | How does cooling load compare to IT load? |
+| Finance/management | Cost visibility | What is the estimated cost and savings potential? |
+| Sustainability team | Energy and emissions story | How much energy could be reduced? What is the carbon implication later? |
+
+### Secondary stakeholders
+
+| Stakeholder | Needs |
+| --- | --- |
+| Developers | Clear contracts, scripts, tests, and architecture |
+| Academic reviewers | Traceable dataset and methodology |
+| Recruiters/portfolio viewers | Polished product thinking and technical execution |
+| Future integrators | Path to DCIM/BMS/SNMP ingestion |
+
+## Input Specification
+
+### Raw MVP Input
+
+Source file:
+
+```text
+power_test.csv.gz
+```
+
+Expected source location:
+
+```text
+https://raw.githubusercontent.com/cchantra/energydata/master/power_test.csv.gz
+```
+
+Raw sample structure:
+
+```csv
+Timestamp,dev_name,Threephase_Power_Factor,...,Active_Threephase_Power,Consumed_apparent_energy_kVAh
+16/05/2018 14:41:02,UDB1_ULC_5,-0.93,...,7.40,2992.0
+16/05/2018 14:41:16,UDB2_ULC_6,-0.93,...,7.36,2908.0
+16/05/2018 14:41:30,ADB1_CRAC3,-0.95,...,12.10,5120.0
+```
+
+### Meter Mapping Input
+
+File: `data/reference/meter_mapping.csv`
+
+```csv
+meter_id,meter_role,equipment_group,facility_id,display_name
+UDB1_ULC_5,it_load,server_rack,ku_dc_1,ULC Rack 5
+UDB2_ULC_6,it_load,server_rack,ku_dc_1,ULC Rack 6
+ADB1_CRAC3,cooling,crac,ku_dc_1,CRAC 3
+ADB1_CRAC4,cooling,crac,ku_dc_1,CRAC 4
+```
+
+### Tariff Input
+
+File: `data/reference/tariffs.csv`
+
+```csv
+facility_id,currency,tariff_per_kwh,effective_from,effective_to
+ku_dc_1,USD,0.12,2018-01-01,
+```
+
+The MVP can use a default tariff when no exact tariff record is provided.
+
+### Scenario Input
+
+File: `data/reference/scenarios.csv`
+
+```csv
+scenario_id,name,cooling_reduction_pct,target_pue_proxy,tariff_per_kwh
+baseline,Baseline,0,,0.12
+cooling_10,Cooling optimization 10pct,10,,0.12
+target_1_60,Target PUE proxy 1.60,,1.60,0.12
+```
+
+### Validation Rules
+
+The pipeline should reject or flag:
+
+- Missing timestamp.
+- Missing device name.
+- Missing or non-numeric `Active_Threephase_Power`.
+- Negative power values unless explicitly marked as meter correction events.
+- Duplicate readings for the same timestamp and meter.
+- Unknown meter roles.
+- PUE proxy below 1.0.
+- IT load equal to zero when calculating PUE proxy.
+
+## Output Specification
+
+### Processed Data Outputs
+
+File: `data/processed/kpi_summary.json`
+
+```json
+{
+  "facility_id": "ku_dc_1",
+  "period_start": "2018-05-16T14:41:02",
+  "period_end": "2018-07-10T10:21:03",
+  "avg_it_kw": 14.26,
+  "avg_cooling_kw": 23.84,
+  "avg_total_proxy_kw": 38.10,
+  "avg_pue_proxy": 2.67,
+  "peak_total_proxy_kw": 78.40,
+  "estimated_energy_kwh": 50120.5,
+  "estimated_cost": 6014.46,
+  "currency": "USD"
+}
+```
+
+File: `data/processed/time_series.json`
+
+```json
+[
+  {
+    "timestamp": "2018-05-16T14:45:00",
+    "it_kw": 14.6,
+    "cooling_kw": 23.8,
+    "total_proxy_kw": 38.4,
+    "pue_proxy": 2.63,
+    "cooling_ratio": 1.63
+  }
+]
+```
+
+File: `data/processed/device_summary.csv`
+
+```csv
+meter_id,meter_role,avg_kw,peak_kw,estimated_kwh,reading_count,data_coverage_pct
+UDB1_ULC_5,it_load,7.15,18.08,9400.1,98068,99.1
+ADB1_CRAC3,cooling,11.79,42.80,15480.4,98352,99.4
+```
+
+File: `data/processed/data_quality.json`
+
+```json
+{
+  "row_count": 393107,
+  "device_count": 4,
+  "missing_power_rows": 2,
+  "unknown_meter_rows": 2,
+  "duplicate_readings": 0,
+  "warnings": [
+    "True PUE unavailable until aggregate facility meter data is provided."
+  ]
+}
+```
+
+### Frontend Output
+
+The user-facing output should look like a polished analytics product.
+
+#### Landing page sections
+
+1. Hero: InfraPulse 2.0, data center energy intelligence, CTA to dashboard.
+2. Problem: energy waste, cooling overhead, lack of explainability.
+3. Dataset-backed proof: public data center meter dataset and sample size.
+4. Product capabilities: monitor, compare, simulate, explain.
+5. Dashboard preview: KPI strip and chart preview.
+6. Methodology: PUE proxy now, true PUE when aggregate meters are available.
+7. Roadmap: MVP, full dataset, integrations, advanced analytics.
+
+#### Dashboard screens
+
+| Screen | Purpose |
+| --- | --- |
+| Overview | Portfolio/facility KPIs and headline trends |
+| Power Trends | IT vs cooling power over time |
+| Cooling Efficiency | PUE proxy, cooling ratio, high overhead periods |
+| Device Explorer | Meter-level comparison and data quality |
+| Savings Simulator | What-if analysis for cooling reductions and target PUE proxy |
+| Methodology | Dataset, formulas, assumptions, limitations |
+
+#### Dashboard KPI tiles
+
+- Average IT load, kW
+- Average cooling load, kW
+- Average PUE proxy
+- Peak total proxy load, kW
+- Estimated energy, kWh
+- Estimated cost
+- Data coverage percent
+- Flagged anomaly count
 
 ## Architecture
 
-Same minimal, auditable pattern as v1:
+### System Flow
 
 ```mermaid
 flowchart LR
-    subgraph phase1 [Phase 1]
-        CSV[CSV Meter Data] --> Pipeline[Batch Pipeline]
-        Sample[Sample Dataset] --> Pipeline
-    end
-    subgraph phase2 [Phase 2]
-        API[DCIM/BMS APIs] --> Ingest[Ingest Layer]
-        SNMP[SNMP/Modbus] --> Ingest
-        Ingest --> Pipeline
-    end
-    Pipeline --> Processed[data/processed/*.csv]
-    Processed --> App[Streamlit Dashboard]
-    App --> Export[PDF/CSV Export]
+    Raw[Raw power_test.csv.gz] --> Pipeline[Python processing pipeline]
+    Mapping[Meter mapping CSV] --> Pipeline
+    Tariffs[Tariff CSV] --> Pipeline
+    Scenarios[Scenario CSV] --> Pipeline
+    Pipeline --> Processed[Processed CSV and JSON outputs]
+    Processed --> React[React frontend]
+    React --> Landing[Landing page]
+    React --> Dashboard[Dashboard]
+    Dashboard --> Export[CSV or JSON export]
 ```
 
-### Proposed repo structure
+### Frontend Architecture
 
+```text
+React + TypeScript + Vite
+UI components
+Charts
+Dashboard state
+Processed JSON/CSV data
 ```
+
+Recommended frontend stack:
+
+| Layer | Choice | Reason |
+| --- | --- | --- |
+| Framework | React + TypeScript | Strong portfolio and production fit |
+| Build tool | Vite | Fast local development |
+| Styling | Tailwind CSS | Fast responsive UI work |
+| Charts | Recharts or Plotly.js | Interactive time-series visualizations |
+| Tables | TanStack Table | Device comparison and sorting/filtering |
+| Icons | lucide-react | Clean dashboard icon set |
+| Data loading | Static JSON/CSV fetch from `public/data` | Simple MVP deployment |
+
+### Data Pipeline Architecture
+
+Recommended pipeline stack:
+
+| Layer | Choice | Reason |
+| --- | --- | --- |
+| Language | Python 3.11+ | Reliable data processing |
+| Dataframes | pandas | CSV/gzip parsing and aggregation |
+| Tests | pytest | Formula and validation tests |
+| Output format | JSON + CSV | Easy frontend consumption |
+
+### Proposed Repository Structure
+
+```text
 InfraPulse_2.0/
+├── README.md
+├── LICENSE
+├── package.json
+├── index.html
+├── vite.config.ts
+├── tsconfig.json
+├── src/
+│   ├── main.tsx
+│   ├── App.tsx
+│   ├── routes/
+│   │   ├── LandingPage.tsx
+│   │   └── DashboardPage.tsx
+│   ├── components/
+│   │   ├── layout/
+│   │   ├── charts/
+│   │   ├── dashboard/
+│   │   └── ui/
+│   ├── data/
+│   │   ├── api.ts
+│   │   └── types.ts
+│   └── styles/
+│       └── globals.css
+├── public/
+│   └── data/
+│       ├── kpi_summary.json
+│       ├── time_series.json
+│       ├── device_summary.csv
+│       ├── savings_scenarios.json
+│       └── data_quality.json
 ├── data/
-│   ├── sample/                          # bundled demo: 3–5 fictional DCs, 12 months
-│   │   ├── facilities.csv               # site metadata (name, region, IT capacity MW)
-│   │   └── meter_readings.csv           # timestamp, facility_id, meter_type, kWh
+│   ├── raw/
+│   │   └── power_test.csv.gz
 │   ├── reference/
-│   │   ├── tariffs.csv                  # region → $/kWh
-│   │   └── benchmarks.csv               # industry PUE targets by facility class
+│   │   ├── meter_mapping.csv
+│   │   ├── tariffs.csv
+│   │   └── scenarios.csv
 │   └── processed/
-│       ├── facilities_energy.csv        # pipeline output: per-facility aggregates
-│       └── savings_scenarios.csv        # what-if scenario results
 ├── pipeline/
-│   ├── ingest_meters.py                 # validate + normalize raw meter CSVs
-│   ├── compute_pue.py                   # PUE1/PUE2 by facility and period
-│   ├── compute_costs.py                 # energy cost + overhead breakdown
-│   ├── savings_scenarios.py             # target PUE → $ saved
-│   ├── scoring_logic.py                 # shared formulas (testable, like v1)
-│   └── run_pipeline.py                  # orchestrator CLI
-├── pages/
-│   ├── home.py                          # portfolio KPIs + headline stats
-│   ├── portfolio.py                     # multi-facility comparison table + map
-│   ├── facility.py                      # single-site drill-down (PUE trend, cost)
-│   ├── savings.py                       # savings analyzer + recommendations
-│   ├── sandbox.py                       # what-if: adjust PUE target, tariff, IT load
-│   └── methodology.py                   # formulas, data sources, limitations
-├── utils/
-│   └── pdf_export.py                    # facility/portfolio report export (reuse v1 pattern)
-├── tests/
-│   └── test_pipeline.py                 # unit tests for PUE/cost/savings formulas
-├── streamlit_app.py                     # navigation entrypoint
-├── data_loader.py                       # single source of truth for loading processed data
-├── requirements.txt
-├── .streamlit/config.toml
-└── README.md                            # this plan, fully written out
+│   ├── ingest.py
+│   ├── normalize.py
+│   ├── metrics.py
+│   ├── scenarios.py
+│   ├── export_frontend.py
+│   └── run_pipeline.py
+└── tests/
+    ├── test_metrics.py
+    ├── test_normalize.py
+    └── test_scenarios.py
 ```
 
----
+## Calculation Methodology
 
-## Data Model
+### PUE Proxy
 
-### `facilities.csv`
+For the public sample dataset:
 
-| Column | Type | Description |
-|--------|------|-------------|
-| `facility_id` | str | Unique ID |
-| `name` | str | e.g. "Melbourne DC-1" |
-| `region` | str | For tariff lookup |
-| `it_capacity_mw` | float | Design IT load |
-| `facility_class` | str | hyperscale / enterprise / edge / colo |
-| `lat`, `lon` | float | Optional, for portfolio map |
-
-### `meter_readings.csv`
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `timestamp` | datetime | Reading time |
-| `facility_id` | str | FK to facilities |
-| `meter_type` | enum | `facility_total`, `it_load`, `cooling`, `ups_loss`, `lighting`, `other` |
-| `value_kwh` | float | Energy consumed in period |
-| `value_kw` | float | Optional instantaneous power |
-
-**Minimum viable input:** `facility_total` + `it_load` per timestamp. Sub-meter types enable overhead breakdown and targeted savings recommendations.
-
-### Pipeline outputs
-
-**`facilities_energy.csv`** — one row per facility per period (month):
-
-- `pue`, `dcie`, `total_kwh`, `it_kwh`, `overhead_kwh`
-- `energy_cost_usd`, `overhead_cost_usd`
-- `pue_tier` (excellent / good / average / poor, based on benchmarks)
-
-**`savings_scenarios.csv`** — one row per facility per target PUE:
-
-- `target_pue`, `annual_savings_usd`, `annual_kwh_saved`, `payback_notes`
-
----
-
-## Streamlit Pages
-
-Mirroring v1 navigation (`streamlit_app.py` with `st.navigation`):
-
-### 1. Home
-- Portfolio headline KPIs: avg PUE, total annual energy cost, total potential savings
-- "Top 5 least efficient facilities" callout
-- Link to live demo (Streamlit Cloud, post-deploy)
-
-### 2. Portfolio
-- Filterable table: all facilities ranked by PUE (worst first)
-- Color-coded PUE tier (colorblind-safe palette, text labels)
-- Optional map view (reuse v1 map pattern with facility markers)
-- Sparkline PUE trend per row
-
-### 3. Facility Drill-down
-- Select facility → 12-month PUE trend chart
-- Energy cost breakdown: IT vs cooling vs UPS vs other
-- Overhead pie chart
-- Comparison to industry benchmark for facility class
-
-### 4. Savings Analyzer
-- Per facility: current PUE → target PUE slider
-- Live calculation: annual $ saved, kWh saved, % overhead reduction
-- Recommendation cards based on overhead breakdown:
-  - High cooling share → "Consider hot/cold aisle containment, CRAC optimization"
-  - High UPS share → "Evaluate high-efficiency UPS modes (e.g. eco mode)"
-  - High IT share → "Workload consolidation / virtualization"
-
-### 5. What-If Sandbox (reuse v1 sandbox pattern)
-- Adjust: tariff rate, IT load growth %, target PUE
-- See portfolio-wide impact on cost and savings in real time
-
-### 6. Methodology
-- PUE formula and measurement categories
-- Cost calculation assumptions
-- Savings formula derivation
-- Data sources and known limitations
-- Citations: ISO/IEC 30134-2, ENERGY STAR DC Metrics Task Force
-
----
-
-## Phased Roadmap
-
-### Phase 1 — CSV + Sample Data (MVP)
-- Bundle sample dataset (3–5 facilities, 12 months)
-- Batch pipeline: ingest → PUE → cost → savings
-- Full Streamlit dashboard (6 pages above)
-- Unit tests for all formulas
-- Deploy to Streamlit Community Cloud
-- **Deliverable:** working demo with no external dependencies
-
-### Phase 2 — User Data Import
-- CSV upload UI in Streamlit (validate schema, run pipeline on upload)
-- Tariff configuration page (user-defined $/kWh by region)
-- PDF export for facility and portfolio reports
-
-### Phase 3 — Live Integrations (designed for, not built in MVP)
-- Abstract `ingest_meters.py` behind a plugin interface:
-  - `CsvIngestor` (Phase 1)
-  - `DcimApiIngestor` (Schneider, Sunbird, Nlyte)
-  - `SnmpIngestor` (PDU/UPS SNMP OIDs)
-- Scheduled pipeline runs (cron / GitHub Actions)
-- Real-time PUE1 dashboard tile
-
-### Phase 4 — Advanced Analytics
-- Carbon emissions tracking (grid emission factors by region)
-- ML anomaly detection on meter readings (flag unusual PUE spikes)
-- CapEx/OpEx ROI calculator for efficiency investments
-
----
-
-## Tech Stack
-
-| Layer | Choice | Rationale |
-|-------|--------|-----------|
-| Language | Python 3.11+ | Same as v1 |
-| Dashboard | Streamlit | Proven in v1, fast iteration |
-| Data processing | pandas | Same as v1 pipeline |
-| Charts | Plotly (via Streamlit) | Interactive time-series |
-| Tests | pytest | Same as v1 |
-| CI | GitHub Actions | Reuse v1 `.github/workflows/tests.yml` pattern |
-| Deploy | Streamlit Community Cloud | Same as v1 demo |
-
-**Dependencies** (initial `requirements.txt`):
-
-```
-streamlit>=1.32
-pandas>=2.0
-plotly>=5.0
-pytest>=7.0
+```text
+it_kw = sum(power_kw for ULC meters)
+cooling_kw = sum(power_kw for CRAC meters)
+total_proxy_kw = it_kw + cooling_kw
+pue_proxy = total_proxy_kw / it_kw
 ```
 
----
+### Cooling Ratio
 
-## Sample Data Strategy
+```text
+cooling_ratio = cooling_kw / it_kw
+```
 
-Generate a realistic synthetic dataset for demo:
+### Energy Estimate
 
-- **5 facilities** across AU regions (Melbourne, Sydney, Perth, Brisbane, Adelaide)
-- **Facility classes:** 1 hyperscale (PUE ~1.15), 2 enterprise (PUE ~1.6–1.8), 1 edge (PUE ~1.4), 1 legacy (PUE ~2.1)
-- **12 months** of monthly meter readings with seasonal cooling variation
-- **Tariffs** from AU average industrial rates (~$0.12–0.18/kWh by state)
+For each interval:
 
-This lets the savings analyzer show meaningful variance without requiring real meter access.
+```text
+interval_hours = minutes_between_current_and_next_reading / 60
+energy_kwh_interval = power_kw x interval_hours
+```
 
----
+### Cost Estimate
 
-## Key Design Principles (carried from v1)
+```text
+cost = energy_kwh x tariff_per_kwh
+```
 
-1. **Transparent formulas** — every number on screen traces to a documented formula, not a black box
-2. **Pipeline/app separation** — app is read-only; all computation happens in batch pipeline
-3. **Explainability over prediction** — rule-based recommendations, not ML-first
-4. **Methodology page is first-class** — not an afterthought
-5. **Colorblind-safe UI** — PUE tiers use color + text label
-6. **No cloud lock-in** — runs locally with zero external API calls in Phase 1
+### Cooling Savings Scenario
 
----
+```text
+reduced_cooling_kw = cooling_kw x (1 - cooling_reduction_pct)
+scenario_total_kw = it_kw + reduced_cooling_kw
+scenario_cost = scenario_energy_kwh x tariff_per_kwh
+savings = baseline_cost - scenario_cost
+```
 
-## README Sections to Write
+### Target PUE Proxy Scenario
 
-When approved, the README will be structured as:
+```text
+target_total_kw = target_pue_proxy x it_kw
+target_cooling_kw = max(target_total_kw - it_kw, 0)
+savings_kw = max(current_cooling_kw - target_cooling_kw, 0)
+```
 
-1. **Title + tagline** — "Data Center Power Usage & Expenditure Platform"
-2. **Problem statement** — why PUE and cost visibility matter
-3. **Key features** — bullet list (portfolio view, PUE calc, savings analyzer, sandbox, methodology)
-4. **Screenshots** — placeholder sections until UI is built
-5. **Architecture diagram** — repo tree + data flow
-6. **Core metrics** — PUE, DCiE, cost, savings formulas
-7. **Data model** — input CSV schemas
-8. **Getting started** — clone, install, run pipeline, launch app
-9. **Phased roadmap** — Phase 1–4 as above
-10. **Relationship to InfraPulse v1** — link to original repo
-11. **License** — MIT (matching v1)
-12. **Contributing** — open for issues/PRs
+## Roadmap
 
----
+### Phase 1: Planning and Data Contract
 
-## Implementation Order (post-README)
+- Finalize README, PRD, SRD, architecture, input contracts, and output contracts.
+- Select `cchantra/energydata` public sample as MVP dataset.
+- Document PUE proxy limitation clearly.
 
-Once the README plan is committed, build in this sequence:
+### Phase 2: React Scaffold
 
-1. Scaffold repo structure + `requirements.txt` + `.streamlit/config.toml`
-2. Write `pipeline/scoring_logic.py` with PUE/cost/savings unit tests
-3. Generate `data/sample/` synthetic dataset
-4. Build `pipeline/run_pipeline.py` end-to-end
-5. Implement `data_loader.py`
-6. Build Streamlit pages (home → portfolio → facility → savings → sandbox → methodology)
-7. Add CI workflow + deploy to Streamlit Cloud
-8. Capture screenshots for README
+- Create Vite React TypeScript app.
+- Add landing page and dashboard route.
+- Add design system basics, chart components, and responsive layout.
 
----
+### Phase 3: Data Pipeline
 
-## Success Criteria
+- Download or include `power_test.csv.gz`.
+- Normalize meters into role-based readings.
+- Generate processed JSON/CSV files.
+- Add tests for formulas and validation.
 
-- Pipeline computes correct PUE for all sample facilities (validated by unit tests)
-- Portfolio page ranks facilities by PUE with correct tier labels
-- Savings analyzer shows non-zero savings when target PUE < current PUE
-- Methodology page documents every formula used in the app
-- App runs locally with `streamlit run streamlit_app.py` after `python pipeline/run_pipeline.py`
-- README is self-contained: a new contributor can understand the project without prior context
+### Phase 4: Dashboard MVP
+
+- Build KPI overview.
+- Build IT vs cooling charts.
+- Build PUE proxy trend.
+- Build device comparison table.
+- Build data quality panel.
+
+### Phase 5: Savings and Methodology
+
+- Add savings simulator.
+- Add methodology page.
+- Add formula explainers and caveats.
+- Add export options.
+
+### Phase 6: Full Dataset and True PUE
+
+- Request or obtain full ScienceDB raw files.
+- Add DB aggregate meter mapping.
+- Compute true PUE where facility total energy is available.
+- Keep PUE proxy as fallback when aggregate meters are missing.
+
+### Phase 7: Future Integrations
+
+- DCIM/BMS ingestion adapters.
+- SNMP/Modbus meter ingestion.
+- Scheduled pipeline runs.
+- Carbon emissions factors.
+- Rule-based and statistical anomaly detection.
+
+## Acceptance Criteria
+
+The MVP is complete when:
+
+- The React landing page is polished and explains the project clearly.
+- The dashboard loads from processed JSON/CSV data.
+- The pipeline regenerates all processed outputs from the raw sample file.
+- IT load and cooling load are separated correctly using meter mapping.
+- PUE proxy and cooling ratio are calculated and documented.
+- Savings scenarios produce plausible, non-negative results.
+- Data quality warnings are visible to users.
+- The project can be run locally from documented commands.
+- Tests cover core metric calculations.
+
+## Local Development Plan
+
+Expected commands after implementation:
+
+```bash
+# install frontend dependencies
+npm install
+
+# generate processed data
+python3 pipeline/run_pipeline.py
+
+# run tests
+python3 -m pytest
+
+# start React app
+npm run dev
+```
+
+## Relationship to InfraPulse v1
+
+[InfraPulse v1](https://github.com/AJ-ing/InfraPulse) was a Streamlit-based infrastructure asset decision-support system for bridge risk scoring.
+
+InfraPulse 2.0 keeps the strongest ideas from v1:
+
+- Transparent formulas.
+- Data pipeline separated from UI.
+- Methodology-first design.
+- Decision-support focus.
+
+But it changes the product direction:
+
+- Domain changes from bridge risk to data center energy intelligence.
+- UI changes from Streamlit to React.
+- Dataset changes from infrastructure asset risk data to real data center energy meter readings.
+- Output changes from prototype dashboard to product-style landing page plus analytics dashboard.
+
+## License
+
+MIT License. See [LICENSE](LICENSE).
