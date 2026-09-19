@@ -8,6 +8,11 @@ Data center energy intelligence for understanding IT load, cooling overhead, eff
 
 InfraPulse 2.0 is a deployed React application, not a Streamlit prototype. It turns a public data-center energy-meter sample into an explainable dashboard with documented calculations and a reproducible local pipeline.
 
+## Live Pages
+
+- [Landing page](https://aj-ing.github.io/InfraPulse_2.0/)
+- [Energy dashboard](https://aj-ing.github.io/InfraPulse_2.0/#/dashboard)
+
 ## What Is Live
 
 - Responsive landing page with dataset and methodology context.
